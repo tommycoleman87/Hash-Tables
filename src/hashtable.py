@@ -34,8 +34,8 @@ class HashTable:
         '''
         hash = 5381
         for x in key:
-            hash = ((hash << 5) + hash) + ord(x)
-        return hash & 0xFFFFFFFF
+            hash = hash * 33 + ord(x)
+        return hash 
        
 
 
