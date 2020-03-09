@@ -13,14 +13,14 @@ class HashTable:
     that accepts string keys
     '''
     def __init__(self, capacity):
+        self.added_capacity = False
         self.capacity = capacity  # Number of buckets in the hash table
         self.storage = [None] * capacity
-
-
+        self.count = 0
+        self.load = None
     def _hash(self, key):
         '''
         Hash an arbitrary key and return an integer.
-
         You may replace the Python hash with DJB2 as a stretch goal.
         '''
         return hash(key)
@@ -32,7 +32,11 @@ class HashTable:
 
         OPTIONAL STRETCH: Research and implement DJB2
         '''
-        pass
+        hash = 5381
+        for x in key:
+            hash = ((hash << 5) + hash) + ord(x)
+        return hash & 0xFFFFFFFF
+       
 
 
     def _hash_mod(self, key):
@@ -40,7 +44,7 @@ class HashTable:
         Take an arbitrary key and return a valid integer index
         within the storage capacity of the hash table.
         '''
-        return self._hash(key) % self.capacity
+        return self._hash_djb2(key) % self.capacity
 
 
     def insert(self, key, value):
@@ -51,7 +55,26 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        if self.storage[self._hash_mod(key)] is None:
+            self.storage[self._hash_mod(key)] = LinkedPair(key, value)
+            self.count += 1
+            self.load = self.count / self.capacity
+            if self.load >= .7:
+                print(self.load, key)
+                self.resize()
+        elif self.storage[self._hash_mod(key)].key is key:
+            self.storage[self._hash_mod(key)] = LinkedPair(key, value)
+        else:
+            lp = self.storage[self._hash_mod(key)]
+            while lp.next is not None and lp.next.key is not key:
+                lp = lp.next
+            lp.next = LinkedPair(key, value)
+            self.count += 1
+            self.load = self.count / self.capacity
+            if self.load >= .7:
+                print(self.load)
+                self.resize()
+       
 
 
 
@@ -63,7 +86,27 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        lp = self.storage[self._hash_mod(key)]
+        if lp == None:
+            return 'Error: key not found'
+        while lp.key is not key and lp.next is not None:
+            if lp.next is not None and lp.next.key is key:
+                lp.next = None
+                self.count -= 1
+                self.load = self.count / self.capacity
+                if self.load <= .2 and self.added_capacity is True:
+                    self.resize()
+            elif lp.next is None:
+                return ('error: key not found')
+            else:
+                lp = lp.next
+        if lp.key is key:
+            self.storage[self._hash_mod(key)] = None
+            self.count -= 1
+            self.load = self.count / self.capacity
+            if self.load <= .2 and self.added_capacity is True:
+                self.resize()
+        
 
 
     def retrieve(self, key):
@@ -74,7 +117,15 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        # print(self.storage[self._hash_mod(key)].value, 'returned value')
+        lp = self.storage[self._hash_mod(key)]
+        if lp is None:
+            return None
+        while lp.key is not key and lp.next is not None:
+            lp = lp.next
+        
+        return lp.value
+   
 
 
     def resize(self):
@@ -84,7 +135,23 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        old_storage = self.storage
+        self.count = 0
+        if self.load >= .7:
+            self.capacity = self.capacity * 2
+            self.load = self.count / self.capacity
+            self.added_capacity = True
+        else:
+            self.capacity = self.capacity // 2
+            self.load = self.count / self.capacity
+        self.storage = [None] * self.capacity
+        print(len(self.storage))
+        for node in old_storage:
+            while node:
+                self.insert(node.key, node.value)
+                node = node.next
+
+
 
 
 
